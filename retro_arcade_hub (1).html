@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEON ARCADE - Retro Game Hub</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        neonCyan: '#00f3ff',
+                        neonPink: '#ff0055',
+                        neonPurple: '#b000ff',
+                        neonYellow: '#ffe600',
+                        darkBg: '#0a0a12',
+                        cardBg: '#121225',
+                    },
+                    fontFamily: {
+                        orbitron: ['Orbitron', 'sans-serif'],
+                        rajdhani: ['Rajdhani', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0a0a12;
+            color: #ffffff;
+            font-family: 'Rajdhani', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Scanline Overlay Effect */
+        .scanlines {
+            position: relative;
+            overflow: hidden;
+        }
+        .scanlines::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 20;
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
+        }
+
+        /* Neon Glow Effects */
+        .glow-cyan {
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.5), inset 0 0 15px rgba(0, 243, 255, 0.2);
+            border: 1px solid #00f3ff;
+        }
+        .glow-pink {
+            box-shadow: 0 0 15px rgba(255, 0, 85, 0.5), inset 0 0 15px rgba(255, 0, 85, 0.2);
+            border: 1px solid #ff0055;
+        }
+        .glow-purple {
+            box-shadow: 0 0 15px rgba(176, 0, 255, 0.5), inset 0 0 15px rgba(176, 0, 255, 0.2);
+            border: 1px solid #b000ff;
+        }
+
+        .text-glow-cyan { text-shadow: 0 0 8px #00f3ff; }
+        .text-glow-pink { text-shadow: 0 0 8px #ff0055; }
+        .text-glow-purple { text-shadow: 0 0 8px #b000ff; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a12;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ff0055;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00f3ff;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between select-none">
+
+    <!-- Top Navigation Header -->
+    <header class="border-b border-gray-800 bg-cardBg/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="showDashboard()">
+                <i class="fa-solid font-orbitron fa-gamepad text-3xl text-neonPink animate-pulse"></i>
+                <h1 class="text-2xl font-black font-orbitron tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-neonCyan via-neonPink to-neonPurple">
+                    CYBER<span class="text-white">ARCADE</span>
+                </h1>
+            </div>
+
+            <!-- Global Controls & Sound Toggle -->
+            <div class="flex items-center space-x-4">
+                <button id="soundToggleBtn" onclick="toggleAudio()" class="px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-300 hover:text-neonCyan hover:border-neonCyan transition flex items-center gap-2 text-sm">
+                    <i id="soundIcon" class="fa-solid fa-volume-high text-neonCyan"></i>
+                    <span id="soundText" class="hidden sm:inline">AUDIO ON</span>
+                </button>
+                <button onclick="showDashboard()" class="px-4 py-1.5 rounded-lg bg-neonPink/20 text-neonPink border border-neonPink/50 hover:bg-neonPink hover:text-white transition font-orbitron text-sm font-bold">
+                    HUB HOME
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dynamic Content Container -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
+
+        <!-- DASHBOARD VIEW -->
+        <section id="dashboardView" class="space-y-8">
+            <!-- Hero Banner -->
+            <div class="relative rounded-2xl overflow-hidden p-8 border border-neonPurple/30 bg-gradient-to-r from-cardBg via-purple-950/20 to-cardBg flex flex-col md:flex-row items-center justify-between">
+                <div class="z-10 space-y-3 max-w-xl text-center md:text-left">
+                    <span class="px-3 py-1 rounded-full text-xs font-bold font-orbitron bg-neonCyan/10 text-neonCyan border border-neonCyan/30">RETRO-FUTURISTIC ENGINE</span>
+                    <h2 class="text-3xl md:text-5xl font-black font-orbitron leading-tight">MASTER THE <span class="text-neonCyan text-glow-cyan">HIGHSCORE</span></h2>
+                    <p class="text-gray-400 font-rajdhani text-lg">Select a game below, break records, and claim your place in local storage leaderboard history!</p>
+                </div>
+                <div class="mt-6 md:mt-0 flex gap-4 text-5xl text-gray-700">
+                    <i class="fa-solid fa-ghost hover:text-neonCyan transition-all duration-300 transform hover:scale-110"></i>
+                    <i class="fa-solid fa-rocket hover:text-neonPink transition-all duration-300 transform hover:scale-110"></i>
+                    <i class="fa-solid fa-cube hover:text-neonPurple transition-all duration-300 transform hover:scale-110"></i>
+                </div>
+            </div>
+
+            <!-- Game Selection Cards Grid -->
+            <div>
+                <h3 class="text-xl font-bold font-orbitron text-gray-300 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-play text-neonCyan text-sm"></i> SELECT EXPERIENCE
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                    <!-- Game 1: Cyber Snake -->
+                    <div class="bg-cardBg rounded-xl p-5 glow-cyan hover:scale-[1.02] transition-transform duration-300 flex flex-col justify-between group">
+                        <div>
+                            <div class="h-36 rounded-lg bg-black/60 border border-neonCyan/30 flex items-center justify-center relative overflow-hidden mb-4">
+                                <i class="fa-solid fa-staff-snake text-6xl text-neonCyan group-hover:scale-125 transition-transform duration-500"></i>
+                                <span class="absolute top-2 right-2 px-2 py-0.5 text-xs bg-neonCyan/20 text-neonCyan border border-neonCyan/50 rounded font-orbitron">CLASSIC</span>
+                            </div>
+                            <h4 class="text-2xl font-bold font-orbitron text-neonCyan">CYBER SNAKE</h4>
+                            <p class="text-gray-400 text-sm mt-2">Navigate the grid, collect data orbs, and avoid colliding with your energetic tail or boundaries.</p>
+                        </div>
+                        <div class="mt-6 flex items-center justify-between pt-4 border-t border-gray-800">
+                            <div>
+                                <span class="text-xs text-gray-500 block font-orbitron">BEST SCORE</span>
+                                <span id="dashSnakeBest" class="text-xl font-bold font-orbitron text-neonYellow">0</span>
+                            </div>
+                            <button onclick="launchGame('snake')" class="px-5 py-2 rounded-lg bg-neonCyan text-black font-orbitron font-bold text-sm hover:bg-white hover:shadow-[0_0_15px_#00f3ff] transition">
+                                PLAY NOW
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Game 2: Space Defender -->
+                    <div class="bg-cardBg rounded-xl p-5 glow-pink hover:scale-[1.02] transition-transform duration-300 flex flex-col justify-between group">
+                        <div>
+                            <div class="h-36 rounded-lg bg-black/60 border border-neonPink/30 flex items-center justify-center relative overflow-hidden mb-4">
+                                <i class="fa-solid fa-rocket text-6xl text-neonPink group-hover:scale-125 transition-transform duration-500"></i>
+                                <span class="absolute top-2 right-2 px-2 py-0.5 text-xs bg-neonPink/20 text-neonPink border border-neonPink/50 rounded font-orbitron">ACTION</span>
+                            </div>
+                            <h4 class="text-2xl font-bold font-orbitron text-neonPink">SPACE DEFENDER</h4>
+                            <p class="text-gray-400 text-sm mt-2">Protect the sector from invading alien fleets and incoming asteroids. Blast through waves!</p>
+                        </div>
+                        <div class="mt-6 flex items-center justify-between pt-4 border-t border-gray-800">
+                            <div>
+                                <span class="text-xs text-gray-500 block font-orbitron">BEST SCORE</span>
+                                <span id="dashSpaceBest" class="text-xl font-bold font-orbitron text-neonYellow">0</span>
+                            </div>
+                            <button onclick="launchGame('space')" class="px-5 py-2 rounded-lg bg-neonPink text-white font-orbitron font-bold text-sm hover:bg-white hover:text-black hover:shadow-[0_0_15px_#ff0055] transition">
+                                PLAY NOW
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Game 3: Neon Breakout -->
+                    <div class="bg-cardBg rounded-xl p-5 glow-purple hover:scale-[1.02] transition-transform duration-300 flex flex-col justify-between group">
+                        <div>
+                            <div class="h-36 rounded-lg bg-black/60 border border-neonPurple/30 flex items-center justify-center relative overflow-hidden mb-4">
+                                <i class="fa-solid fa-cubes text-6xl text-neonPurple group-hover:scale-125 transition-transform duration-500"></i>
+                                <span class="absolute top-2 right-2 px-2 py-0.5 text-xs bg-neonPurple/20 text-neonPurple border border-neonPurple/50 rounded font-orbitron">ARCADE</span>
+                            </div>
+                            <h4 class="text-2xl font-bold font-orbitron text-neonPurple">NEON BREAKOUT</h4>
+                            <p class="text-gray-400 text-sm mt-2">Smash through glowing brick defenses with high-speed energy orbs and precision paddle controls.</p>
+                        </div>
+                        <div class="mt-6 flex items-center justify-between pt-4 border-t border-gray-800">
+                            <div>
+                                <span class="text-xs text-gray-500 block font-orbitron">BEST SCORE</span>
+                                <span id="dashBreakoutBest" class="text-xl font-bold font-orbitron text-neonYellow">0</span>
+                            </div>
+                            <button onclick="launchGame('breakout')" class="px-5 py-2 rounded-lg bg-neonPurple text-white font-orbitron font-bold text-sm hover:bg-white hover:text-black hover:shadow-[0_0_15px_#b000ff] transition">
+                                PLAY NOW
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Local High Scores Leaderboard Section -->
+            <div class="bg-cardBg/60 border border-gray-800 rounded-xl p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold font-orbitron text-gray-200 flex items-center gap-2">
+                        <i class="fa-solid fa-trophy text-neonYellow"></i> HALL OF FAME
+                    </h3>
+                    <button onclick="resetHighScores()" class="text-xs text-gray-500 hover:text-neonPink transition">Reset Scores</button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                    <div class="p-4 rounded-lg bg-black/40 border border-gray-800">
+                        <span class="text-xs text-gray-400 font-orbitron block">CYBER SNAKE RECORD</span>
+                        <span id="lbSnake" class="text-2xl font-black font-orbitron text-neonCyan">0</span>
+                    </div>
+                    <div class="p-4 rounded-lg bg-black/40 border border-gray-800">
+                        <span class="text-xs text-gray-400 font-orbitron block">SPACE DEFENDER RECORD</span>
+                        <span id="lbSpace" class="text-2xl font-black font-orbitron text-neonPink">0</span>
+                    </div>
+                    <div class="p-4 rounded-lg bg-black/40 border border-gray-800">
+                        <span class="text-xs text-gray-400 font-orbitron block">NEON BREAKOUT RECORD</span>
+                        <span id="lbBreakout" class="text-2xl font-black font-orbitron text-neonPurple">0</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- GAMEPLAY VIEW CONTAINER (Hidden by default) -->
+        <section id="gameView" class="hidden flex flex-col items-center">
+            
+            <!-- Active Game Control Bar -->
+            <div class="w-full max-w-4xl flex flex-wrap justify-between items-center mb-4 gap-3 bg-cardBg/90 p-4 rounded-xl border border-gray-800">
+                <div>
+                    <h2 id="activeGameTitle" class="text-2xl font-black font-orbitron text-neonCyan">GAME TITLE</h2>
+                    <p id="activeGameControls" class="text-xs text-gray-400 font-rajdhani">Controls guide here</p>
+                </div>
+                
+                <div class="flex items-center gap-6">
+                    <div class="text-right">
+                        <span class="text-xs text-gray-500 font-orbitron block">SCORE</span>
+                        <span id="gameScore" class="text-2xl font-bold font-orbitron text-white">0</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs text-gray-500 font-orbitron block">HIGH SCORE</span>
+                        <span id="gameHighScore" class="text-2xl font-bold font-orbitron text-neonYellow">0</span>
+                    </div>
+                    <button id="pauseBtn" onclick="togglePause()" class="px-4 py-2 rounded-lg bg-yellow-500/20 text-neonYellow border border-neonYellow/50 font-orbitron font-bold text-sm hover:bg-neonYellow hover:text-black transition">
+                        PAUSE
+                    </button>
+                    <button onclick="showDashboard()" class="px-4 py-2 rounded-lg bg-gray-800 text-gray-300 hover:text-white hover:bg-gray-700 transition font-orbitron text-sm">
+                        EXIT
+                    </button>
+                </div>
+            </div>
+
+            <!-- Canvas Display Frame -->
+            <div class="relative w-full max-w-4xl flex justify-center items-center scanlines bg-black rounded-xl overflow-hidden border-2 border-gray-800 shadow-2xl">
+                <canvas id="gameCanvas" width="800" height="500" class="w-full h-auto block max-h-[70vh] object-contain"></canvas>
+
+                <!-- On-Screen Pause Overlay -->
+                <div id="pauseOverlay" class="hidden absolute inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center z-30">
+                    <h2 class="text-4xl font-black font-orbitron text-neonYellow tracking-widest mb-4">GAME PAUSED</h2>
+                    <p class="text-gray-400 mb-6 font-rajdhani">Take a breather racer...</p>
+                    <button onclick="togglePause()" class="px-6 py-3 rounded-xl bg-neonYellow text-black font-orbitron font-bold hover:bg-white transition">
+                        RESUME GAME
+                    </button>
+                </div>
+
+                <!-- Game Over Overlay -->
+                <div id="gameOverOverlay" class="hidden absolute inset-0 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center z-30 p-6 text-center">
+                    <h2 class="text-5xl font-black font-orbitron text-neonPink tracking-widest mb-2 animate-bounce">GAME OVER</h2>
+                    <p id="gameOverReason" class="text-gray-400 mb-4">Systems Critical Fail!</p>
+                    <div class="bg-cardBg p-4 rounded-xl border border-gray-800 mb-6 min-w-[200px]">
+                        <span class="text-xs text-gray-500 font-orbitron block">FINAL SCORE</span>
+                        <span id="finalScore" class="text-3xl font-black font-orbitron text-neonCyan">0</span>
+                    </div>
+                    <div class="flex gap-4">
+                        <button onclick="restartCurrentGame()" class="px-6 py-3 rounded-xl bg-neonCyan text-black font-orbitron font-bold hover:bg-white transition">
+                            RETRY
+                        </button>
+                        <button onclick="showDashboard()" class="px-6 py-3 rounded-xl bg-gray-800 text-white font-orbitron font-bold hover:bg-gray-700 transition">
+                            MAIN MENU
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Touch Controls overlay (Visible on smaller touch screens) -->
+            <div id="mobileControls" class="w-full max-w-4xl mt-4 grid grid-cols-3 gap-2 sm:hidden">
+                <button id="touchLeft" class="bg-gray-800 border border-gray-700 p-4 rounded-lg text-center text-xl text-neonCyan active:bg-neonCyan active:text-black">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <div class="grid grid-rows-2 gap-2">
+                    <button id="touchUp" class="bg-gray-800 border border-gray-700 p-2 rounded-lg text-center text-neonCyan active:bg-neonCyan active:text-black">
+                        <i class="fa-solid fa-arrow-up"></i>
+                    </button>
+                    <button id="touchDown" class="bg-gray-800 border border-gray-700 p-2 rounded-lg text-center text-neonCyan active:bg-neonCyan active:text-black">
+                        <i class="fa-solid fa-arrow-down"></i>
+                    </button>
+                </div>
+                <button id="touchRight" class="bg-gray-800 border border-gray-700 p-4 rounded-lg text-center text-xl text-neonCyan active:bg-neonCyan active:text-black">
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+                <button id="touchAction" class="col-span-3 bg-neonPink/20 border border-neonPink text-neonPink p-3 rounded-lg text-center font-orbitron font-bold active:bg-neonPink active:text-white mt-1">
+                    ACTION / FIRE (SPACE)
+                </button>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-800/80 bg-black/40 py-4 text-center text-xs text-gray-600 font-orbitron">
+        CYBERARCADE ENGINE &copy; 2026 | BUILT WITH HTML5 CANVAS & WEB AUDIO API
+    </footer>
+
+    <!-- JAVASCRIPT ENGINE & GAME LOGIC -->
+    <script>
+        /* ==========================================================================
+           AUDIO SYSTEM (Synthesized via Web Audio API - No External Sound Files Needed)
+           ========================================================================== */
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.enabled = true;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+            }
+
+            playTone(freq, type = 'sine', duration = 0.1, startVol = 0.1) {
+                if (!this.enabled) return;
+                this.init();
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(startVol, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e) {}
+            }
+
+            playEat() {
+                this.playTone(440, 'square', 0.08, 0.15);
+                setTimeout(() => this.playTone(880, 'square', 0.1, 0.15), 50);
+            }
+
+            playShoot() {
+                if (!this.enabled) return;
+                this.init();
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.1);
+                } catch(e) {}
+            }
+
+            playHit() {
+                this.playTone(120, 'triangle', 0.15, 0.25);
+            }
+
+            playExplosion() {
+                if (!this.enabled) return;
+                this.init();
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(100, this.ctx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(30, this.ctx.currentTime + 0.3);
+                    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.3);
+                } catch(e) {}
+            }
+
+            playBounce() {
+                this.playTone(300, 'sine', 0.05, 0.1);
+            }
+        }
+
+        const sound = new SoundEngine();
+
+        function toggleAudio() {
+            sound.enabled = !sound.enabled;
+            const icon = document.getElementById('soundIcon');
+            const text = document.getElementById('soundText');
+            if (sound.enabled) {
+                icon.className = 'fa-solid fa-volume-high text-neonCyan';
+                text.innerText = 'AUDIO ON';
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark text-gray-500';
+                text.innerText = 'AUDIO OFF';
+            }
+        }
+
+        /* ==========================================================================
+           PARTICLE SYSTEM ENGINE (Fluid visual flare)
+           ========================================================================== */
+        class Particle {
+            constructor(x, y, color, speed = 2, size = 3) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.size = Math.random() * size + 1;
+                this.vx = (Math.random() - 0.5) * speed * 2;
+                this.vy = (Math.random() - 0.5) * speed * 2;
+                this.alpha = 1;
+                this.decay = Math.random() * 0.02 + 0.015;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.alpha -= this.decay;
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, this.alpha);
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        let particles = [];
+        function createExplosion(x, y, color, count = 20) {
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle(x, y, color, 4, 4));
+            }
+        }
+
+        function updateParticles(ctx) {
+            particles = particles.filter(p => p.alpha > 0);
+            particles.forEach(p => {
+                p.update();
+                p.draw(ctx);
+            });
+        }
+
+        /* ==========================================================================
+           APP STATE & HIGH SCORE MANAGER
+           ========================================================================== */
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let currentGame = null; // 'snake', 'space', 'breakout'
+        let isPaused = false;
+        let isGameOver = false;
+        let animationFrameId = null;
+        let score = 0;
+
+        const highScores = {
+            snake: parseInt(localStorage.getItem('cyber_snake_hs') || '0'),
+            space: parseInt(localStorage.getItem('cyber_space_hs') || '0'),
+            breakout: parseInt(localStorage.getItem('cyber_breakout_hs') || '0')
+        };
+
+        function updateLeaderboardsUI() {
+            document.getElementById('dashSnakeBest').innerText = highScores.snake;
+            document.getElementById('dashSpaceBest').innerText = highScores.space;
+            document.getElementById('dashBreakoutBest').innerText = highScores.breakout;
+            document.getElementById('lbSnake').innerText = highScores.snake;
+            document.getElementById('lbSpace').innerText = highScores.space;
+            document.getElementById('lbBreakout').innerText = highScores.breakout;
+        }
+
+        function saveHighScore(game, val) {
+            if (val > highScores[game]) {
+                highScores[game] = val;
+                localStorage.setItem(`cyber_${game}_hs`, val.toString());
+                updateLeaderboardsUI();
+            }
+        }
+
+        function resetHighScores() {
+            localStorage.removeItem('cyber_snake_hs');
+            localStorage.removeItem('cyber_space_hs');
+            localStorage.removeItem('cyber_breakout_hs');
+            highScores.snake = 0;
+            highScores.space = 0;
+            highScores.breakout = 0;
+            updateLeaderboardsUI();
+        }
+
+        /* ==========================================================================
+           VIEW & SCREEN NAVIGATION
+           ========================================================================== */
+        function showDashboard() {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            document.getElementById('dashboardView').classList.remove('hidden');
+            document.getElementById('gameView').classList.add('hidden');
+            document.getElementById('pauseOverlay').classList.add('hidden');
+            document.getElementById('gameOverOverlay').classList.add('hidden');
+            currentGame = null;
+            isPaused = false;
+            isGameOver = false;
+        }
+
+        function launchGame(gameType) {
+            sound.init();
+            document.getElementById('dashboardView').classList.add('hidden');
+            document.getElementById('gameView').classList.remove('hidden');
+            document.getElementById('gameOverOverlay').classList.add('hidden');
+            document.getElementById('pauseOverlay').classList.add('hidden');
+
+            currentGame = gameType;
+            isPaused = false;
+            isGameOver = false;
+            score = 0;
+            particles = [];
+            document.getElementById('gameScore').innerText = '0';
+
+            const titleElem = document.getElementById('activeGameTitle');
+            const ctrlElem = document.getElementById('activeGameControls');
+
+            if (gameType === 'snake') {
+                titleElem.innerText = 'CYBER SNAKE';
+                titleElem.className = 'text-2xl font-black font-orbitron text-neonCyan';
+                ctrlElem.innerText = 'Use Arrow Keys / WASD or Touch Controls to Navigate';
+                document.getElementById('gameHighScore').innerText = highScores.snake;
+                initSnake();
+            } else if (gameType === 'space') {
+                titleElem.innerText = 'SPACE DEFENDER';
+                titleElem.className = 'text-2xl font-black font-orbitron text-neonPink';
+                ctrlElem.innerText = 'Left/Right Keys or Touch to Move. Space / Action button to Shoot!';
+                document.getElementById('gameHighScore').innerText = highScores.space;
+                initSpace();
+            } else if (gameType === 'breakout') {
+                titleElem.innerText = 'NEON BREAKOUT';
+                titleElem.className = 'text-2xl font-black font-orbitron text-neonPurple';
+                ctrlElem.innerText = 'Move mouse or Left/Right Keys or Touch to control Paddle';
+                document.getElementById('gameHighScore').innerText = highScores.breakout;
+                initBreakout();
+            }
+
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            gameLoop();
+        }
+
+        function togglePause() {
+            if (isGameOver) return;
+            isPaused = !isPaused;
+            const overlay = document.getElementById('pauseOverlay');
+            const btn = document.getElementById('pauseBtn');
+            if (isPaused) {
+                overlay.classList.remove('hidden');
+                btn.innerText = 'RESUME';
+            } else {
+                overlay.classList.add('hidden');
+                btn.innerText = 'PAUSE';
+            }
+        }
+
+        function triggerGameOver(reason = 'Game Over') {
+            isGameOver = true;
+            sound.playExplosion();
+            saveHighScore(currentGame, score);
+            document.getElementById('gameOverReason').innerText = reason;
+            document.getElementById('finalScore').innerText = score;
+            document.getElementById('gameOverOverlay').classList.remove('hidden');
+        }
+
+        function restartCurrentGame() {
+            if (currentGame) launchGame(currentGame);
+        }
+
+        /* Global Main Loop Routine */
+        function gameLoop() {
+            if (!isPaused && !isGameOver) {
+                // Clear Canvas background
+                ctx.fillStyle = '#05050a';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Render Background Grid Lines for Aesthetics
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+                ctx.lineWidth = 1;
+                for (let x = 0; x < canvas.width; x += 40) {
+                    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+                }
+                for (let y = 0; y < canvas.height; y += 40) {
+                    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+                }
+
+                // Update & Render Specific Game
+                if (currentGame === 'snake') updateSnake();
+                else if (currentGame === 'space') updateSpace();
+                else if (currentGame === 'breakout') updateBreakout();
+
+                // Update particle engine
+                updateParticles(ctx);
+            }
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        /* ==========================================================================
+           GAME 1: CYBER SNAKE LOGIC
+           ========================================================================== */
+        const gridSize = 20;
+        let snake = [];
+        let snakeDir = { x: 1, y: 0 };
+        let nextDir = { x: 1, y: 0 };
+        let food = { x: 0, y: 0 };
+        let snakeSpeedCounter = 0;
+
+        function initSnake() {
+            snake = [
+                { x: 10, y: 12 },
+                { x: 9, y: 12 },
+                { x: 8, y: 12 }
+            ];
+            snakeDir = { x: 1, y: 0 };
+            nextDir = { x: 1, y: 0 };
+            spawnFood();
+        }
+
+        function spawnFood() {
+            food = {
+                x: Math.floor(Math.random() * (canvas.width / gridSize)),
+                y: Math.floor(Math.random() * (canvas.height / gridSize))
+            };
+        }
+
+        function updateSnake() {
+            snakeSpeedCounter++;
+            if (snakeSpeedCounter % 5 === 0) { // Controls snake speed
+                snakeDir = { ...nextDir };
+                const head = { x: snake[0].x + snakeDir.x, y: snake[0].y + snakeDir.y };
+
+                // Collision with boundaries
+                if (head.x < 0 || head.x >= canvas.width / gridSize || head.y < 0 || head.y >= canvas.height / gridSize) {
+                    triggerGameOver('System Collision Detected!');
+                    return;
+                }
+
+                // Collision with self
+                for (let seg of snake) {
+                    if (seg.x === head.x && seg.y === head.y) {
+                        triggerGameOver('Tail Overlap Corruption!');
+                        return;
+                    }
+                }
+
+                snake.unshift(head);
+
+                // Check food collection
+                if (head.x === food.x && head.y === food.y) {
+                    score += 10;
+                    document.getElementById('gameScore').innerText = score;
+                    sound.playEat();
+                    createExplosion(food.x * gridSize + 10, food.y * gridSize + 10, '#00f3ff', 15);
+                    spawnFood();
+                } else {
+                    snake.pop();
+                }
+            }
+
+            // Render Food
+            ctx.fillStyle = '#ff0055';
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = '#ff0055';
+            ctx.fillRect(food.x * gridSize + 2, food.y * gridSize + 2, gridSize - 4, gridSize - 4);
+
+            // Render Snake Segment Nodes
+            snake.forEach((seg, index) => {
+                ctx.fillStyle = index === 0 ? '#00f3ff' : '#00a3ff';
+                ctx.shadowBlur = index === 0 ? 10 : 0;
+                ctx.shadowColor = '#00f3ff';
+                ctx.fillRect(seg.x * gridSize + 1, seg.y * gridSize + 1, gridSize - 2, gridSize - 2);
+            });
+            ctx.shadowBlur = 0;
+        }
+
+        /* ==========================================================================
+           GAME 2: SPACE DEFENDER LOGIC
+           ========================================================================== */
+        let player = { x: 400, y: 440, w: 40, h: 25, speed: 6 };
+        let lasers = [];
+        let enemies = [];
+        let spaceKeys = { left: false, right: false, fire: false };
+        let enemySpawnTimer = 0;
+
+        function initSpace() {
+            player.x = canvas.width / 2 - 20;
+            lasers = [];
+            enemies = [];
+            enemySpawnTimer = 0;
+        }
+
+        function updateSpace() {
+            // Player Movement Logic
+            if (spaceKeys.left && player.x > 0) player.x -= player.speed;
+            if (spaceKeys.right && player.x < canvas.width - player.w) player.x += player.speed;
+
+            // Render Player Spaceship (SVG Style Drawn on Canvas)
+            ctx.fillStyle = '#ff0055';
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = '#ff0055';
+            ctx.beginPath();
+            ctx.moveTo(player.x + player.w / 2, player.y);
+            ctx.lineTo(player.x + player.w, player.y + player.h);
+            ctx.lineTo(player.x + player.w / 2, player.y + player.h - 5);
+            ctx.lineTo(player.x, player.y + player.h);
+            ctx.closePath();
+            ctx.fill();
+
+            // Spawn Invaders/Asteroids
+            enemySpawnTimer++;
+            if (enemySpawnTimer % 45 === 0) {
+                enemies.push({
+                    x: Math.random() * (canvas.width - 30),
+                    y: -30,
+                    w: 30,
+                    h: 25,
+                    speed: 2 + Math.random() * 2
+                });
+            }
+
+            // Update & Render Lasers
+            lasers.forEach((l, index) => {
+                l.y -= l.speed;
+                ctx.fillStyle = '#00f3ff';
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = '#00f3ff';
+                ctx.fillRect(l.x, l.y, l.w, l.h);
+
+                if (l.y < 0) lasers.splice(index, 1);
+            });
+
+            // Update & Render Enemies
+            enemies.forEach((e, eIdx) => {
+                e.y += e.speed;
+                ctx.fillStyle = '#ffe600';
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = '#ffe600';
+                ctx.beginPath();
+                ctx.arc(e.x + e.w / 2, e.y + e.h / 2, e.w / 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Player collision check
+                if (e.y + e.h >= player.y && e.x < player.x + player.w && e.x + e.w > player.x) {
+                    triggerGameOver('Ship Destroyed in Action!');
+                }
+
+                // Laser hitting enemy check
+                lasers.forEach((l, lIdx) => {
+                    if (l.x < e.x + e.w && l.x + l.w > e.x && l.y < e.y + e.h && l.y + l.h > e.y) {
+                        createExplosion(e.x + e.w / 2, e.y + e.h / 2, '#ffe600', 15);
+                        sound.playHit();
+                        score += 15;
+                        document.getElementById('gameScore').innerText = score;
+                        enemies.splice(eIdx, 1);
+                        lasers.splice(lIdx, 1);
+                    }
+                });
+
+                // Reaching bottom line
+                if (e.y > canvas.height) {
+                    triggerGameOver('Sector Defenses Breached!');
+                }
+            });
+            ctx.shadowBlur = 0;
+        }
+
+        function fireLaser() {
+            if (currentGame === 'space' && !isPaused && !isGameOver) {
+                lasers.push({ x: player.x + player.w / 2 - 2, y: player.y, w: 4, h: 12, speed: 8 });
+                sound.playShoot();
+            }
+        }
+
+        /* ==========================================================================
+           GAME 3: NEON BREAKOUT LOGIC
+           ========================================================================== */
+        let paddle = { w: 100, h: 12, x: 350, speed: 8 };
+        let ball = { x: 400, y: 300, vx: 4, vy: -4, radius: 7 };
+        let bricks = [];
+        const brickRows = 5;
+        const brickCols = 8;
+        const brickPadding = 10;
+        const brickOffsetTop = 50;
+        const brickOffsetLeft = 35;
+
+        function initBreakout() {
+            paddle.x = canvas.width / 2 - paddle.w / 2;
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height - 50;
+            ball.vx = (Math.random() > 0.5 ? 1 : -1) * 4;
+            ball.vy = -4;
+
+            bricks = [];
+            const brickWidth = (canvas.width - (brickOffsetLeft * 2) - (brickPadding * (brickCols - 1))) / brickCols;
+            const colors = ['#ff0055', '#b000ff', '#00f3ff', '#ffe600', '#00ff66'];
+
+            for (let r = 0; r < brickRows; r++) {
+                bricks[r] = [];
+                for (let c = 0; c < brickCols; c++) {
+                    bricks[r][c] = {
+                        x: brickOffsetLeft + c * (brickWidth + brickPadding),
+                        y: brickOffsetTop + r * (20 + brickPadding),
+                        w: brickWidth,
+                        h: 20,
+                        status: 1,
+                        color: colors[r]
+                    };
+                }
+            }
+        }
+
+        function updateBreakout() {
+            // Paddle Keyboard Input Movement
+            if (spaceKeys.left && paddle.x > 0) paddle.x -= paddle.speed;
+            if (spaceKeys.right && paddle.x < canvas.width - paddle.w) paddle.x += paddle.speed;
+
+            // Move Ball
+            ball.x += ball.vx;
+            ball.y += ball.vy;
+
+            // Ball Wall Bounce Collision
+            if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
+                ball.vx *= -1;
+                sound.playBounce();
+            }
+            if (ball.y - ball.radius < 0) {
+                ball.vy *= -1;
+                sound.playBounce();
+            }
+
+            // Ball Paddle Collision
+            if (ball.y + ball.radius >= canvas.height - 30 && ball.y - ball.radius <= canvas.height - 30 + paddle.h) {
+                if (ball.x > paddle.x && ball.x < paddle.x + paddle.w) {
+                    ball.vy = -Math.abs(ball.vy);
+                    // Add direction spin based on impact location
+                    const hitPoint = (ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2);
+                    ball.vx = hitPoint * 6;
+                    sound.playBounce();
+                }
+            }
+
+            // Bottom floor collision -> Game Over
+            if (ball.y + ball.radius > canvas.height) {
+                triggerGameOver('Ball Dropped into Abyss!');
+                return;
+            }
+
+            // Render Paddle
+            ctx.fillStyle = '#b000ff';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#b000ff';
+            ctx.fillRect(paddle.x, canvas.height - 30, paddle.w, paddle.h);
+
+            // Render Ball
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = '#00f3ff';
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Brick Logic & Drawing
+            let activeBricks = 0;
+            for (let r = 0; r < brickRows; r++) {
+                for (let c = 0; c < brickCols; c++) {
+                    let b = bricks[r][c];
+                    if (b.status === 1) {
+                        activeBricks++;
+                        // Check Ball Collision with Brick
+                        if (ball.x > b.x && ball.x < b.x + b.w && ball.y - ball.radius < b.y + b.h && ball.y + ball.radius > b.y) {
+                            ball.vy *= -1;
+                            b.status = 0;
+                            score += 20;
+                            document.getElementById('gameScore').innerText = score;
+                            sound.playHit();
+                            createExplosion(b.x + b.w / 2, b.y + b.h / 2, b.color, 10);
+                        }
+
+                        // Render Brick
+                        ctx.fillStyle = b.color;
+                        ctx.shadowBlur = 6;
+                        ctx.shadowColor = b.color;
+                        ctx.fillRect(b.x, b.y, b.w, b.h);
+                    }
+                }
+            }
+
+            // Win condition check
+            if (activeBricks === 0) {
+                triggerGameOver('Grid Cleared! Excellent Victory!');
+            }
+
+            ctx.shadowBlur = 0;
+        }
+
+        /* ==========================================================================
+           CONTROLS & EVENT LISTENERS
+           ========================================================================== */
+        // Keydown Handler
+        window.addEventListener('keydown', (e) => {
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+                e.preventDefault(); // Prevent page scroll
+            }
+
+            // Cyber Snake Input
+            if (currentGame === 'snake') {
+                if ((e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') && snakeDir.y === 0) nextDir = { x: 0, y: -1 };
+                if ((e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') && snakeDir.y === 0) nextDir = { x: 0, y: 1 };
+                if ((e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') && snakeDir.x === 0) nextDir = { x: -1, y: 0 };
+                if ((e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') && snakeDir.x === 0) nextDir = { x: 1, y: 0 };
+            }
+
+            // Space Defender & Breakout Input
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') spaceKeys.left = true;
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') spaceKeys.right = true;
+
+            if (e.key === ' ' || e.key === 'Spacebar') {
+                spaceKeys.fire = true;
+                fireLaser();
+            }
+
+            if (e.key === 'p' || e.key === 'P') togglePause();
+        });
+
+        // Keyup Handler
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') spaceKeys.left = false;
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') spaceKeys.right = false;
+            if (e.key === ' ' || e.key === 'Spacebar') spaceKeys.fire = false;
+        });
+
+        // Mouse Controls for Paddle in Breakout
+        canvas.addEventListener('mousemove', (e) => {
+            if (currentGame === 'breakout' && !isPaused) {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const mouseX = (e.clientX - rect.left) * scaleX;
+                paddle.x = Math.max(0, Math.min(canvas.width - paddle.w, mouseX - paddle.w / 2));
+            }
+        });
+
+        // Touch Control Buttons Listeners (For Mobile Devices)
+        const setupTouchBtn = (id, actionStart, actionEnd) => {
+            const btn = document.getElementById(id);
+            if (!btn) return;
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); actionStart(); });
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); if (actionEnd) actionEnd(); });
+            btn.addEventListener('mousedown', actionStart);
+            btn.addEventListener('mouseup', actionEnd || (() => {}));
+        };
+
+        setupTouchBtn('touchLeft', () => {
+            spaceKeys.left = true;
+            if (currentGame === 'snake' && snakeDir.x === 0) nextDir = { x: -1, y: 0 };
+        }, () => spaceKeys.left = false);
+
+        setupTouchBtn('touchRight', () => {
+            spaceKeys.right = true;
+            if (currentGame === 'snake' && snakeDir.x === 0) nextDir = { x: 1, y: 0 };
+        }, () => spaceKeys.right = false);
+
+        setupTouchBtn('touchUp', () => {
+            if (currentGame === 'snake' && snakeDir.y === 0) nextDir = { x: 0, y: -1 };
+        });
+
+        setupTouchBtn('touchDown', () => {
+            if (currentGame === 'snake' && snakeDir.y === 0) nextDir = { x: 0, y: 1 };
+        });
+
+        setupTouchBtn('touchAction', () => {
+            fireLaser();
+        });
+
+        // Initial Load Routine
+        window.onload = () => {
+            updateLeaderboardsUI();
+        };
+    </script>
+</body>
+</html>
